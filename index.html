@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#6C4AB6">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Minik Kaşif</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+<style>
+  :root{
+    --sky:#7ED0F0; --grape:#6C4AB6; --grass:#6FE06F; --sun:#FFD23F;
+    --coral:#FF6B6B; --pink:#FF8FB1; --teal:#25C4B6; --orange:#FF9F45;
+    --cream:#FFF8E7; --ink:#3A3A5C; --purple:#9B5DE5;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;font-family:'Baloo 2',system-ui,sans-serif;}
+  html,body{height:100%;overflow:hidden;overscroll-behavior:none;}
+  body{background:#6C4AB6;}
+  #app{position:fixed;inset:0;overflow:hidden;}
+  canvas{display:block;touch-action:none;}
+
+  /* --- Yükleme --- */
+  #splash{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:linear-gradient(165deg,#7ED0F0,#6C4AB6);z-index:200;transition:opacity .6s;}
+  #splash .logo{font-size:clamp(40px,12vw,84px);font-weight:800;color:#fff;text-shadow:0 6px 0 rgba(0,0,0,.15);
+    animation:pop 1s cubic-bezier(.2,1.4,.4,1);}
+  #splash .sub{color:#fff;opacity:.9;font-weight:700;font-size:clamp(16px,4vw,22px);margin-top:6px;}
+  #splash .rocket{font-size:64px;margin-top:20px;animation:floaty 2s ease-in-out infinite;}
+  #tapStart{margin-top:30px;background:#FFD23F;color:#3A3A5C;border:none;border-radius:30px;
+    padding:16px 40px;font-size:22px;font-weight:800;box-shadow:0 6px 0 rgba(0,0,0,.2);cursor:pointer;
+    animation:pulse 1.4s ease-in-out infinite;}
+
+  @keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
+  @keyframes floaty{0%,100%{transform:translateY(0)}50%{transform:translateY(-14px)}}
+  @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fall{to{transform:translateY(110vh) rotate(720deg);opacity:.85}}
+  @keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+  @keyframes wobble{0%,100%{transform:rotate(0)}25%{transform:rotate(-6deg)}75%{transform:rotate(6deg)}}
+
+  .screen{position:absolute;inset:0;display:none;flex-direction:column;}
+  .screen.active{display:flex;animation:slideUp .4s ease;}
+
+  /* --- Üst bar --- */
+  .topbar{position:absolute;top:calc(env(safe-area-inset-top,0) + 12px);left:0;right:0;
+    display:flex;justify-content:space-between;padding:0 16px;z-index:40;}
+  .pill{background:#fff;border-radius:30px;box-shadow:0 4px 0 rgba(0,0,0,.12);border:none;cursor:pointer;
+    height:56px;min-width:56px;display:flex;align-items:center;justify-content:center;gap:6px;
+    font-size:24px;font-weight:800;color:var(--ink);padding:0 16px;}
+  .pill:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.12);}
+
+  /* --- Menü --- */
+  #menu{background:linear-gradient(165deg,#7ED0F0 0%,#9B5DE5 60%,#6C4AB6 100%);}
+  .clouds{position:absolute;inset:0;overflow:hidden;pointer-events:none;}
+  .cloud{position:absolute;font-size:60px;opacity:.7;animation:driftx linear infinite;}
+  @keyframes driftx{from{transform:translateX(-120px)}to{transform:translateX(120vw)}}
+  .menu-head{text-align:center;padding-top:calc(env(safe-area-inset-top,0) + 78px);color:#fff;}
+  .menu-head h1{font-size:clamp(34px,9vw,52px);text-shadow:0 4px 0 rgba(0,0,0,.18);}
+  .menu-head p{font-weight:700;opacity:.92;margin-top:2px;font-size:clamp(15px,4vw,20px);}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;
+    padding:24px 20px 40px;max-width:560px;margin:0 auto;width:100%;overflow-y:auto;}
+  .tile{border:none;border-radius:30px;cursor:pointer;padding:24px 10px 18px;
+    box-shadow:0 7px 0 rgba(0,0,0,.2), inset 0 3px 0 rgba(255,255,255,.35);
+    display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;overflow:hidden;}
+  .tile:active{transform:translateY(4px);box-shadow:0 3px 0 rgba(0,0,0,.2), inset 0 3px 0 rgba(255,255,255,.35);}
+  .tile .emo{font-size:60px;filter:drop-shadow(0 4px 3px rgba(0,0,0,.2));transition:transform .3s;}
+  .tile:active .emo{transform:scale(1.15) rotate(-5deg);}
+  .tile .lbl{font-size:21px;font-weight:800;color:#fff;text-shadow:0 2px 0 rgba(0,0,0,.18);}
+  .tile .shine{position:absolute;top:-40%;left:-60%;width:60%;height:180%;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.4),transparent);transform:rotate(20deg);
+    animation:sweep 4s ease-in-out infinite;}
+  @keyframes sweep{0%,70%{left:-60%}100%{left:130%}}
+
+  /* --- Oyun başlıkları --- */
+  .gtitle{position:absolute;top:calc(env(safe-area-inset-top,0) + 20px);left:0;right:0;text-align:center;
+    color:#fff;font-size:clamp(20px,5.5vw,28px);font-weight:800;text-shadow:0 2px 0 rgba(0,0,0,.18);
+    z-index:35;pointer-events:none;padding:0 80px;}
+
+  /* --- HTML tabanlı oyun ızgaraları --- */
+  .playwrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:calc(env(safe-area-inset-top,0) + 90px) 16px 24px;overflow-y:auto;}
+  .cardgrid{display:grid;gap:14px;width:100%;max-width:520px;}
+  .gcard{background:#fff;border:none;border-radius:24px;cursor:pointer;padding:16px 8px;
+    box-shadow:0 6px 0 rgba(0,0,0,.15);display:flex;flex-direction:column;align-items:center;gap:6px;
+    transition:transform .18s;}
+  .gcard:active{transform:scale(1.12) translateY(-4px);}
+  .gcard .ce{font-size:52px;}
+  .gcard .cn{font-size:17px;font-weight:800;color:var(--ink);}
+
+  /* Toast / kutlama */
+  #toast{position:absolute;top:38%;left:50%;transform:translateX(-50%);z-index:120;
+    background:#fff;border-radius:30px;padding:20px 34px;box-shadow:0 10px 30px rgba(0,0,0,.3);
+    font-size:26px;font-weight:800;color:var(--ink);display:none;animation:pop .5s;}
+  #confetti{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:110;}
+  .conf{position:absolute;width:14px;height:14px;top:-5%;}
+
+  .star-fly{position:absolute;font-size:34px;pointer-events:none;z-index:100;animation:starfly 1s ease-out forwards;}
+  @keyframes starfly{0%{transform:translateY(0) scale(.4);opacity:1}100%{transform:translateY(-120px) scale(1.4);opacity:0}}
+
+  .hidden{display:none!important;}
+  .btn-again{margin-top:20px;background:var(--sun);border:none;border-radius:24px;padding:14px 32px;
+    font-size:20px;font-weight:800;color:var(--ink);box-shadow:0 5px 0 rgba(0,0,0,.2);cursor:pointer;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <div id="splash">
+    <div class="logo">Minik Kaşif</div>
+    <div class="sub">Dokun, öğren, eğlen! 🌟</div>
+    <div class="rocket">🚀</div>
+    <button id="tapStart">▶ Başla</button>
+  </div>
+
+  <!-- MENÜ -->
+  <div id="menu" class="screen">
+    <div class="clouds" id="clouds"></div>
+    <div class="topbar">
+      <div style="width:56px"></div>
+      <button class="pill" id="starPill">⭐ <span id="starCount">0</span></button>
+    </div>
+    <div class="menu-head">
+      <h1>Minik Kaşif</h1>
+      <p>Hangi oyunu oynayalım?</p>
+    </div>
+    <div class="grid" id="menuGrid"></div>
+  </div>
+
+  <!-- OYUN SAHNELERİ -->
+  <div id="game" class="screen">
+    <div class="topbar">
+      <button class="pill" id="homeBtn">🏠</button>
+      <button class="pill">⭐ <span id="starCount2">0</span></button>
+    </div>
+    <div class="gtitle" id="gtitle"></div>
+    <div id="gameHost" style="flex:1;position:relative;"></div>
+  </div>
+
+  <div id="confetti"></div>
+  <div id="toast"></div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════
+   MİNİK KAŞİF PRO — çekirdek
+═══════════════════════════════════════════════════════════ */
+const $ = (s)=>document.querySelector(s);
+const app = $("#app");
+
+/* ---- Ses: konuşma ---- */
+let voices=[];
+function loadVoices(){ voices = window.speechSynthesis ? speechSynthesis.getVoices() : []; }
+if(window.speechSynthesis){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
+function say(text,{rate=0.95,pitch=1.2}={}){
+  try{ if(!window.speechSynthesis)return; speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text); u.lang="tr-TR"; u.rate=rate; u.pitch=pitch;
+    const tr=voices.find(v=>v.lang&&v.lang.startsWith("tr")); if(tr)u.voice=tr;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+/* ---- Ses: efektler (Web Audio) ---- */
+let AC=null;
+function ac(){ if(!AC){try{AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}} if(AC&&AC.state==="suspended")AC.resume(); return AC; }
+function tone(freq,dur=.15,type="sine",vol=.2){ const c=ac(); if(!c)return;
+  const o=c.createOscillator(),g=c.createGain(); o.type=type; o.frequency.value=freq;
+  g.gain.setValueAtTime(vol,c.currentTime); g.gain.exponentialRampToValueAtTime(.001,c.currentTime+dur);
+  o.connect(g);g.connect(c.destination);o.start();o.stop(c.currentTime+dur); }
+function pop(){ tone(300+Math.random()*400,.09,"triangle",.18); }
+function win(){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,.16,"sine",.22),i*110)); }
+function buzz(){ tone(180,.22,"square",.14); }
+
+/* ---- Yıldız ---- */
+let stars = parseInt(localStorage.getItem("mk_stars")||"0",10);
+function renderStars(){ $("#starCount").textContent=stars; $("#starCount2").textContent=stars; }
+function addStar(x,y){
+  stars++; localStorage.setItem("mk_stars",stars); renderStars();
+  if(x!=null){ const s=document.createElement("div"); s.className="star-fly"; s.textContent="⭐";
+    s.style.left=x+"px"; s.style.top=y+"px"; app.appendChild(s); setTimeout(()=>s.remove(),1000); }
+}
+renderStars();
+
+/* ---- Kutlama ---- */
+function confetti(){
+  const box=$("#confetti"); const cols=["#FF6B6B","#FFD23F","#6FE06F","#25C4B6","#FF8FB1","#9B5DE5"];
+  for(let i=0;i<32;i++){ const d=document.createElement("div"); d.className="conf";
+    d.style.left=Math.random()*100+"%"; d.style.background=cols[i%cols.length];
+    d.style.borderRadius=i%2?"50%":"3px";
+    d.style.animation=`fall ${1.4+Math.random()*1.4}s ease-in ${Math.random()*.3}s forwards`;
+    box.appendChild(d); setTimeout(()=>d.remove(),3200); }
+}
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.style.display="block";
+  setTimeout(()=>t.style.display="none",1400); }
+function celebrate(msg){ win(); confetti(); toast(msg); }
+
+/* ---- Ekran yönetimi ---- */
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("#"+id).classList.add("active"); }
+
+/* ---- Bulutlar ---- */
+(function(){ const c=$("#clouds"); const em=["☁️","⛅","🌤️"];
+  for(let i=0;i<5;i++){ const d=document.createElement("div"); d.className="cloud";
+    d.textContent=em[i%em.length]; d.style.top=(8+i*16)+"%";
+    d.style.animationDuration=(20+i*8)+"s"; d.style.animationDelay=(-i*5)+"s";
+    d.style.fontSize=(40+Math.random()*40)+"px"; c.appendChild(d); } })();
+
+/* ═══════════════════════════════════════════════════════════
+   OYUN KAYITLARI
+═══════════════════════════════════════════════════════════ */
+const GAMES = [
+  {id:"tower",  icon:"🐮", label:"Hayvan Kulesi", bg:"linear-gradient(160deg,#6FE06F,#25C4B6)", title:"Kuleyi devirme! 🐮"},
+  {id:"fire",   icon:"🚒", label:"İtfaiye",       bg:"linear-gradient(160deg,#FF6B6B,#9B5DE5)", title:"Yangını söndür! 🚒"},
+  {id:"animals",icon:"🐶", label:"Hayvan Sesleri",bg:"linear-gradient(160deg,#FF9F45,#FFD23F)", title:"Hayvanlara dokun! 🐾"},
+  {id:"numbers",icon:"🔢", label:"Sayılar",       bg:"linear-gradient(160deg,#25C4B6,#7ED0F0)", title:"Sayalım! 🔢"},
+  {id:"colors", icon:"🎨", label:"Renkler",       bg:"linear-gradient(160deg,#9B5DE5,#FF8FB1)", title:"Renkleri öğren! 🎨"},
+  {id:"paint",  icon:"🖌️", label:"Boyama",        bg:"linear-gradient(160deg,#FF6B6B,#FF9F45)", title:"Parmağınla boya! 🖌️"},
+  {id:"puzzle", icon:"🧩", label:"Yapboz",        bg:"linear-gradient(160deg,#FF9F45,#FFD23F)", title:"Aynısını bul! 🧩"},
+  {id:"balloon",icon:"🎈", label:"Balon Patlat",  bg:"linear-gradient(160deg,#7ED0F0,#9B5DE5)", title:"Balonları patlat! 🎈"},
+];
+
+/* Menü kartları */
+(function(){ const g=$("#menuGrid");
+  GAMES.forEach(game=>{ const b=document.createElement("button"); b.className="tile";
+    b.style.background=game.bg;
+    b.innerHTML=`<div class="shine"></div><span class="emo">${game.icon}</span><span class="lbl">${game.label}</span>`;
+    b.onclick=()=>{ ac(); pop(); say(game.label); openGame(game); };
+    g.appendChild(b); }); })();
+
+/* Oyun açma */
+let cleanup=null;
+function openGame(game){
+  if(cleanup){ cleanup(); cleanup=null; }
+  $("#game").style.background=game.bg;
+  $("#gtitle").textContent=game.title;
+  const host=$("#gameHost"); host.innerHTML="";
+  show("game");
+  const fn=SCENES[game.id];
+  if(fn) cleanup=fn(host);
+}
+$("#homeBtn").onclick=()=>{ pop(); if(cleanup){cleanup();cleanup=null;} say("Ana menü"); show("menu"); };
+
+/* ═══════════════════════════════════════════════════════════
+   SAHNELER
+═══════════════════════════════════════════════════════════ */
+const SCENES = {};
+
+/* ---------- 1) HAYVAN KULESİ (Matter.js gerçek fizik) ---------- */
+SCENES.tower = (host)=>{
+  const M=window.Matter;
+  const W=host.clientWidth, H=host.clientHeight;
+  const cv=document.createElement("canvas"); cv.width=W; cv.height=H; host.appendChild(cv);
+
+  const info=document.createElement("div");
+  info.style.cssText="position:absolute;bottom:24px;left:0;right:0;text-align:center;color:#fff;font-weight:800;font-size:18px;text-shadow:0 2px 0 rgba(0,0,0,.2);pointer-events:none";
+  info.textContent="Hayvanlara dokun, düşürme! 🎯";
+  host.appendChild(info);
+
+  if(!M){ info.textContent="Fizik motoru yükleniyor... 🔄"; return ()=>{}; }
+
+  const engine=M.Engine.create(); engine.gravity.y=1;
+  const render=M.Render.create({canvas:cv,engine,options:{width:W,height:H,wireframes:false,background:"transparent"}});
+
+  const ground=M.Bodies.rectangle(W/2,H-20,W,40,{isStatic:true,render:{fillStyle:"#8B5E3C"}});
+  const wallL=M.Bodies.rectangle(-10,H/2,20,H,{isStatic:true,render:{visible:false}});
+  const wallR=M.Bodies.rectangle(W+10,H/2,20,H,{isStatic:true,render:{visible:false}});
+  M.World.add(engine.world,[ground,wallL,wallR]);
+
+  const emos=["🐮","🐷","🐑","🐔","🐰","🐴"];
+  const bodies=[];
+  function stackBlock(i){
+    const size=58; const x=W/2 + (i%2?18:-18);
+    const y=H-60-i*(size+2);
+    const b=M.Bodies.rectangle(x,y,size,size,{restitution:.1,friction:.8,render:{fillStyle:"rgba(255,255,255,0.92)"}});
+    b.emo=emos[i%emos.length]; bodies.push(b); M.World.add(engine.world,b);
+  }
+  for(let i=0;i<6;i++) stackBlock(i);
+
+  // emoji çizimi
+  M.Events.on(render,"afterRender",()=>{
+    const ctx=render.context; ctx.textAlign="center"; ctx.textBaseline="middle"; ctx.font="42px serif";
+    bodies.forEach(b=>{ ctx.save(); ctx.translate(b.position.x,b.position.y); ctx.rotate(b.angle);
+      ctx.fillText(b.emo,0,2); ctx.restore(); });
+  });
+
+  // dokunma → kuvvet uygula
+  let tapped=0;
+  function hit(e){
+    const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e;
+    const mx=(p.clientX-r.left)*(W/r.width), my=(p.clientY-r.top)*(H/r.height);
+    const found=M.Query.point(bodies,{x:mx,y:my})[0];
+    if(found){ pop(); M.Body.applyForce(found,found.position,{x:(Math.random()-.5)*.08,y:-.05});
+      tapped++; addStar(p.clientX,p.clientY);
+      if(tapped===1) info.textContent="Hihi! Devrilmesine dikkat et 😄";
+      const anim=["Zıpla!","Hoop!","Yuvarlan!"][tapped%3]; say(anim,{pitch:1.4});
+    }
+  }
+  cv.addEventListener("mousedown",hit);
+  cv.addEventListener("touchstart",(e)=>{e.preventDefault();hit(e);},{passive:false});
+
+  const runner=M.Runner.create(); M.Runner.run(runner,engine); M.Render.run(render);
+  setTimeout(()=>say("Hayvan kulesine dokun! Zıplat ama devirme!"),400);
+
+  return ()=>{ M.Render.stop(render); M.Runner.stop(runner); M.World.clear(engine.world); M.Engine.clear(engine); };
+};
+
+/* ---------- 2) İTFAİYE (canvas + su parçacıkları) ---------- */
+SCENES.fire = (host)=>{
+  const W=host.clientWidth,H=host.clientHeight;
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;host.appendChild(cv);
+  const ctx=cv.getContext("2d");
+  let fires=[], drops=[], done=false, raf;
+  const truckX=W/2;
+  function spawn(){ fires=[]; const n=5;
+    for(let i=0;i<n;i++) fires.push({x:W*0.2+i*(W*0.6/(n-1)),y:H*0.55,life:1,s:1}); done=false; }
+  spawn();
+  setTimeout(()=>say("Ateşe dokun, su püskürt, yangını söndür!"),400);
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    // zemin ev
+    ctx.font="52px serif";ctx.textAlign="center";ctx.textBaseline="middle";
+    ctx.fillText("🏠",W/2,H*0.72);
+    // itfaiye
+    ctx.font="60px serif"; ctx.fillText("🚒",truckX,H*0.88);
+    // ateşler
+    ctx.font="50px serif";
+    fires.forEach(f=>{ if(f.life>0){ ctx.save(); ctx.globalAlpha=f.life;
+      ctx.translate(f.x,f.y); const w=1+Math.sin(Date.now()/120+f.x)*0.08; ctx.scale(w,w);
+      ctx.fillText("🔥",0,0); ctx.restore(); } });
+    // su damlaları
+    ctx.font="20px serif";
+    drops.forEach(d=>{ ctx.fillText("💧",d.x,d.y); d.x+=d.vx; d.y+=d.vy; d.vy+=0.5; d.life--; });
+    drops=drops.filter(d=>d.life>0);
+    raf=requestAnimationFrame(draw);
+  }
+  draw();
+
+  function squirt(fx,fy,sx,sy){ for(let i=0;i<10;i++){ const a=Math.atan2(fy-sy,fx-sx)+(Math.random()-.5)*.5;
+    const sp=8+Math.random()*4; drops.push({x:sx,y:sy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-4,life:22}); } }
+
+  function hit(e){ if(done)return; const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e;
+    const mx=(p.clientX-r.left)*(W/r.width),my=(p.clientY-r.top)*(H/r.height);
+    let hitAny=false;
+    fires.forEach(f=>{ if(f.life>0 && Math.hypot(mx-f.x,my-f.y)<44){ f.life-=0.5; hitAny=true;
+      squirt(f.x,f.y,truckX,H*0.88); tone(300,.15,"sawtooth",.12);
+      if(f.life<=0){ pop(); addStar(p.clientX,p.clientY); say("Söndü!",{pitch:1.3}); } } });
+    if(hitAny && fires.every(f=>f.life<=0) && !done){ done=true; celebrate("Aferin! 🎉"); say("Bütün yangınları söndürdün! Sen bir kahramansın!",{pitch:1.3});
+      const b=document.createElement("button"); b.className="btn-again"; b.textContent="🔁 Tekrar";
+      b.style.cssText+=";position:absolute;bottom:30px;left:50%;transform:translateX(-50%)";
+      b.onclick=()=>{ pop();spawn();b.remove(); }; host.appendChild(b); }
+  }
+  cv.addEventListener("mousedown",hit);
+  cv.addEventListener("touchstart",(e)=>{e.preventDefault();hit(e);},{passive:false});
+  cv.addEventListener("touchmove",(e)=>{e.preventDefault();hit(e);},{passive:false});
+
+  return ()=>cancelAnimationFrame(raf);
+};
+
+/* ---------- 3) HAYVAN SESLERİ ---------- */
+SCENES.animals = (host)=>{
+  const data=[["🐮","İnek","Mööö"],["🐑","Koyun","Mee"],["🐷","Domuz","Oink"],["🐔","Tavuk","Gıt gıt"],
+    ["🐴","At","İhihi"],["🐶","Köpek","Hav hav"],["🐱","Kedi","Miyav"],["🦆","Ördek","Vak vak"]];
+  const wrap=document.createElement("div"); wrap.className="playwrap";
+  const grid=document.createElement("div"); grid.className="cardgrid";
+  grid.style.gridTemplateColumns="repeat(auto-fit,minmax(110px,1fr))";
+  data.forEach(([e,n,s])=>{ const b=document.createElement("button"); b.className="gcard";
+    b.innerHTML=`<span class="ce">${e}</span><span class="cn">${n}</span>`;
+    b.onclick=(ev)=>{ pop(); say(`${n}. ${s}`,{pitch:1.35}); addStar(ev.clientX,ev.clientY);
+      b.animate([{transform:"scale(1)"},{transform:"scale(1.2) rotate(-6deg)"},{transform:"scale(1)"}],{duration:400}); };
+    grid.appendChild(b); });
+  wrap.appendChild(grid); host.appendChild(wrap);
+  setTimeout(()=>say("Bir hayvana dokun!"),400);
+  return ()=>{};
+};
+
+/* ---------- 4) SAYILAR ---------- */
+SCENES.numbers = (host)=>{
+  const words=["Bir","İki","Üç","Dört","Beş","Altı","Yedi","Sekiz","Dokuz","On"];
+  const wrap=document.createElement("div"); wrap.className="playwrap";
+  const grid=document.createElement("div"); grid.className="cardgrid";
+  grid.style.gridTemplateColumns="repeat(auto-fit,minmax(84px,1fr))";
+  words.forEach((w,i)=>{ const b=document.createElement("button"); b.className="gcard";
+    b.innerHTML=`<span style="font-size:42px;font-weight:800;color:#25C4B6">${i+1}</span><span class="cn">${w}</span>`;
+    b.onclick=(ev)=>{ pop(); say(`${i+1}. ${w}`,{pitch:1.25}); addStar(ev.clientX,ev.clientY);
+      b.style.background="#FFD23F"; setTimeout(()=>b.style.background="#fff",300); };
+    grid.appendChild(b); });
+  wrap.appendChild(grid);
+  const apples=document.createElement("div"); apples.style.cssText="margin-top:18px;font-size:26px;text-align:center;max-width:360px";
+  apples.textContent="🍎".repeat(10); wrap.appendChild(apples);
+  host.appendChild(wrap);
+  setTimeout(()=>say("Sayılara dokun ve say!"),400);
+  return ()=>{};
+};
+
+/* ---------- 5) RENKLER ---------- */
+SCENES.colors = (host)=>{
+  const cols=[["Kırmızı","#FF4757"],["Sarı","#FFD23F"],["Mavi","#3B82F6"],["Yeşil","#4CD137"],["Mor","#9B5DE5"],["Turuncu","#FF9F45"]];
+  const wrap=document.createElement("div"); wrap.className="playwrap";
+  const grid=document.createElement("div"); grid.className="cardgrid";
+  grid.style.gridTemplateColumns="repeat(auto-fit,minmax(130px,1fr))";
+  cols.forEach(([n,hex])=>{ const b=document.createElement("button"); b.className="gcard";
+    b.style.cssText="background:"+hex+";border:6px solid #fff;height:110px;justify-content:flex-end;padding-bottom:10px";
+    b.innerHTML=`<span style="background:rgba(255,255,255,.92);padding:3px 12px;border-radius:14px;font-size:16px;font-weight:800;color:#3A3A5C">${n}</span>`;
+    b.onclick=(ev)=>{ pop(); say(n,{pitch:1.25}); addStar(ev.clientX,ev.clientY);
+      b.animate([{transform:"scale(1)"},{transform:"scale(1.12)"},{transform:"scale(1)"}],{duration:300}); };
+    grid.appendChild(b); });
+  wrap.appendChild(grid); host.appendChild(wrap);
+  setTimeout(()=>say("Renklere dokun!"),400);
+  return ()=>{};
+};
+
+/* ---------- 6) BOYAMA ---------- */
+SCENES.paint = (host)=>{
+  const wrap=document.createElement("div"); wrap.className="playwrap"; wrap.style.paddingTop="calc(env(safe-area-inset-top,0) + 84px)";
+  const cv=document.createElement("canvas"); cv.width=340; cv.height=340;
+  cv.style.cssText="border-radius:24px;box-shadow:0 6px 0 rgba(0,0,0,.15);background:#fff;max-width:100%;touch-action:none";
+  const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,340,340);
+  ctx.lineCap="round"; ctx.lineJoin="round";
+  let drawing=false,color="#FF4757",gave=false,last=null;
+  function pos(e){ const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e;
+    return {x:(p.clientX-r.left)*(cv.width/r.width),y:(p.clientY-r.top)*(cv.height/r.height)}; }
+  function start(e){ drawing=true; last=pos(e); dot(last); if(!gave){gave=true;addStar();} }
+  function move(e){ if(!drawing)return; e.preventDefault(); const p=pos(e);
+    ctx.strokeStyle=color; ctx.lineWidth=26; ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke(); last=p; }
+  function dot(p){ ctx.fillStyle=color; ctx.beginPath(); ctx.arc(p.x,p.y,13,0,7); ctx.fill(); }
+  function end(){ drawing=false; }
+  cv.addEventListener("mousedown",start);cv.addEventListener("mousemove",move);
+  cv.addEventListener("mouseup",end);cv.addEventListener("mouseleave",end);
+  cv.addEventListener("touchstart",(e)=>{e.preventDefault();start(e);},{passive:false});
+  cv.addEventListener("touchmove",move,{passive:false});
+  cv.addEventListener("touchend",end);
+  wrap.appendChild(cv);
+
+  const palette=document.createElement("div"); palette.style.cssText="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;justify-content:center";
+  [["#FF4757","Kırmızı"],["#FFD23F","Sarı"],["#3B82F6","Mavi"],["#4CD137","Yeşil"],["#9B5DE5","Mor"],["#FF9F45","Turuncu"]].forEach(([hex,n],i)=>{
+    const d=document.createElement("button");
+    d.style.cssText=`width:46px;height:46px;border-radius:50%;background:${hex};cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.15);border:${i===0?"5px solid #fff":"5px solid rgba(255,255,255,.4)"}`;
+    d.onclick=()=>{ color=hex; pop(); say(n); [...palette.children].forEach(c=>c.style.border="5px solid rgba(255,255,255,.4)"); d.style.border="5px solid #fff"; };
+    palette.appendChild(d); });
+  const clr=document.createElement("button"); clr.textContent="🧽";
+  clr.style.cssText="width:46px;height:46px;border-radius:50%;background:#fff;border:none;font-size:22px;box-shadow:0 3px 0 rgba(0,0,0,.15);cursor:pointer";
+  clr.onclick=()=>{ ctx.fillStyle="#fff"; ctx.fillRect(0,0,340,340); pop(); };
+  palette.appendChild(clr);
+  wrap.appendChild(palette); host.appendChild(wrap);
+  setTimeout(()=>say("Parmağınla boya!"),400);
+  return ()=>{};
+};
+
+/* ---------- 7) YAPBOZ (eşleştirme) ---------- */
+SCENES.puzzle = (host)=>{
+  const pool=["🐰","🚗","🌟","🍎","🎈","🐢","🌈","🦋","🌻","🐙","🚀","🍦"];
+  const wrap=document.createElement("div"); wrap.className="playwrap"; wrap.innerHTML="";
+  const target=document.createElement("div");
+  target.style.cssText="background:#fff;border-radius:28px;padding:14px 30px;box-shadow:0 6px 0 rgba(0,0,0,.15);text-align:center;margin-bottom:24px";
+  const grid=document.createElement("div"); grid.className="cardgrid"; grid.style.gridTemplateColumns="1fr 1fr"; grid.style.maxWidth="320px";
+  wrap.appendChild(target); wrap.appendChild(grid); host.appendChild(wrap);
+  let tgt;
+  function round(){
+    const sh=[...pool].sort(()=>Math.random()-.5).slice(0,4);
+    tgt=sh[Math.floor(Math.random()*4)];
+    target.innerHTML=`<div style="font-size:13px;font-weight:800;color:#3A3A5C;opacity:.6">BUNU BUL</div><div style="font-size:72px">${tgt}</div>`;
+    grid.innerHTML="";
+    sh.forEach(emo=>{ const b=document.createElement("button"); b.className="gcard"; b.style.padding="18px 0";
+      b.innerHTML=`<span style="font-size:56px">${emo}</span>`;
+      b.onclick=(ev)=>{ if(emo===tgt){ celebrate("Doğru! 🎉"); say("Aferin! Doğru!",{pitch:1.3}); addStar(ev.clientX,ev.clientY); setTimeout(round,1200); }
+        else{ buzz(); say("Tekrar dene!"); b.style.background="#FFD5D5"; setTimeout(()=>b.style.background="#fff",400); } };
+      grid.appendChild(b); });
+    setTimeout(()=>say("Aynısını bul!"),300);
+  }
+  round();
+  return ()=>{};
+};
+
+/* ---------- 8) BALON PATLAT ---------- */
+SCENES.balloon = (host)=>{
+  const W=host.clientWidth,H=host.clientHeight;
+  const cv=document.createElement("canvas");cv.width=W;cv.height=H;host.appendChild(cv);
+  const ctx=cv.getContext("2d");
+  const cols=["#FF6B6B","#FFD23F","#6FE06F","#25C4B6","#FF8FB1","#9B5DE5","#FF9F45"];
+  let balloons=[], pops=[], raf, spawnT=0;
+  function add(){ balloons.push({x:40+Math.random()*(W-80),y:H+40,r:34+Math.random()*10,
+    c:cols[Math.floor(Math.random()*cols.length)],sp:1+Math.random()*1.3,sw:Math.random()*Math.PI*2}); }
+  for(let i=0;i<5;i++) add();
+  setTimeout(()=>say("Balonlara dokun ve patlat!"),400);
+
+  function draw(){
+    ctx.clearRect(0,0,W,H);
+    balloons.forEach(b=>{ b.y-=b.sp; b.sw+=0.03; b.x+=Math.sin(b.sw)*0.6;
+      ctx.save(); ctx.translate(b.x,b.y);
+      ctx.fillStyle=b.c; ctx.beginPath(); ctx.ellipse(0,0,b.r*0.82,b.r,0,0,7); ctx.fill();
+      ctx.fillStyle="rgba(255,255,255,.35)"; ctx.beginPath(); ctx.ellipse(-b.r*0.28,-b.r*0.3,b.r*0.16,b.r*0.24,0,0,7); ctx.fill();
+      ctx.strokeStyle="rgba(255,255,255,.5)"; ctx.beginPath(); ctx.moveTo(0,b.r); ctx.lineTo(0,b.r+18); ctx.stroke();
+      ctx.restore(); });
+    balloons=balloons.filter(b=>b.y>-60);
+    pops.forEach(p=>{ p.parts.forEach(pt=>{ ctx.fillStyle=p.c; ctx.globalAlpha=pt.life/12;
+      ctx.beginPath(); ctx.arc(pt.x,pt.y,5,0,7); ctx.fill(); pt.x+=pt.vx; pt.y+=pt.vy; pt.vy+=0.3; pt.life--; }); ctx.globalAlpha=1; });
+    pops=pops.filter(p=>p.parts.some(pt=>pt.life>0));
+    if(balloons.length<6 && Date.now()-spawnT>800){ add(); spawnT=Date.now(); }
+    raf=requestAnimationFrame(draw);
+  }
+  draw();
+  function hit(e){ const r=cv.getBoundingClientRect(); const p=e.touches?e.touches[0]:e;
+    const mx=(p.clientX-r.left)*(W/r.width),my=(p.clientY-r.top)*(H/r.height);
+    for(let i=balloons.length-1;i>=0;i--){ const b=balloons[i];
+      if(Math.hypot(mx-b.x,my-b.y)<b.r+6){ const parts=[];
+        for(let k=0;k<10;k++){ const a=k/10*Math.PI*2; parts.push({x:b.x,y:b.y,vx:Math.cos(a)*4,vy:Math.sin(a)*4,life:12}); }
+        pops.push({c:b.c,parts}); balloons.splice(i,1); tone(500+Math.random()*300,.1,"triangle",.2);
+        addStar(p.clientX,p.clientY); say("Pat!",{pitch:1.4}); break; } }
+  }
+  cv.addEventListener("mousedown",hit);
+  cv.addEventListener("touchstart",(e)=>{e.preventDefault();hit(e);},{passive:false});
+  return ()=>cancelAnimationFrame(raf);
+};
+
+/* ═══════════════════════════════════════════════════════════
+   BAŞLATMA
+═══════════════════════════════════════════════════════════ */
+$("#tapStart").onclick=()=>{ ac(); loadVoices(); say("Merhaba! Hoş geldin!");
+  const sp=$("#splash"); sp.style.opacity="0"; setTimeout(()=>{ sp.style.display="none"; show("menu"); say("Hangi oyunu oynayalım?"); },600); };
+
+/* PWA service worker */
+if("serviceWorker" in navigator){ window.addEventListener("load",()=>{ navigator.serviceWorker.register("sw.js").catch(()=>{}); }); }
+</script>
+</body>
+</html>
