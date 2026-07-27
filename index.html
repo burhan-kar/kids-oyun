@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#6b57e8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Minik Kaşif">
+<title>Minik Kaşif</title>
+<style>
+:root{--ink:#24324a;--shadow:0 12px 30px rgba(34,48,90,.18)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--ink);background:#ccefff}
+button{font:inherit;border:0;cursor:pointer;touch-action:manipulation}
+.app{max-width:620px;margin:auto;min-height:100vh;background:linear-gradient(#bceeff,#fff4d4 68%,#d7efaf);overflow:hidden}
+.screen{display:none;min-height:100vh;padding:calc(env(safe-area-inset-top) + 12px) 14px calc(env(safe-area-inset-bottom) + 18px)}
+.screen.active{display:block}
+.top,.game-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.brand{display:flex;align-items:center;gap:8px;font-size:27px;font-weight:900}.brand i{font-style:normal;font-size:42px}
+.pill{background:white;border-radius:999px;padding:10px 15px;box-shadow:var(--shadow);font-weight:900}
+.hero{margin:14px 0;background:rgba(255,255,255,.92);border-radius:28px;padding:15px;box-shadow:var(--shadow);display:flex;gap:14px;align-items:center}
+.hero .friend{font-size:65px}.hero h1{font-size:23px;margin:0 0 4px}.hero p{margin:0;color:#68768b;line-height:1.35}
+.menu{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.card{min-height:178px;border-radius:30px;box-shadow:var(--shadow);padding:13px;display:flex;flex-direction:column;justify-content:space-between;align-items:center}
+.card .art{font-size:67px;line-height:1.05;filter:drop-shadow(0 7px 4px rgba(0,0,0,.12))}
+.card b{background:rgba(255,255,255,.9);border-radius:999px;padding:8px 13px;font-size:18px}
+.c1{background:linear-gradient(145deg,#ffd889,#ffb447)}.c2{background:linear-gradient(145deg,#ffaaaa,#ff6573)}
+.c3{background:linear-gradient(145deg,#a4e8ff,#68c7ff)}.c4{background:linear-gradient(145deg,#d1c3ff,#9f88ff)}
+.round{width:56px;height:56px;border-radius:50%;background:white;box-shadow:var(--shadow);font-size:29px;font-weight:900}
+.game-head{margin-bottom:9px}.game-head strong{font-size:21px}
+.scene{height:690px;max-height:79vh;min-height:520px;border-radius:31px;overflow:hidden;position:relative;box-shadow:var(--shadow)}
+.hint{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:15;background:rgba(255,255,255,.93);border-radius:999px;padding:9px 13px;font-weight:850;white-space:nowrap}
+.overlay{display:none;position:absolute;inset:0;background:rgba(30,40,65,.45);z-index:60;place-items:center;padding:20px}.overlay.show{display:grid}
+.win{background:#fff;border-radius:30px;padding:22px;text-align:center;box-shadow:var(--shadow)}.win .big{font-size:75px}.win h2{margin:5px 0 15px}.win button{background:#6b57e8;color:white;border-radius:20px;padding:14px 20px;font-weight:900;font-size:18px}
+.confetti{position:absolute;top:-35px;font-size:27px;animation:conf 1.5s forwards}@keyframes conf{to{transform:translateY(680px) rotate(540deg);opacity:0}}
+
+/* tower */
+.tower{background:linear-gradient(#9de1ff 0 59%,#8dd16e 59%)}
+.cloud{position:absolute;font-size:53px}.cl1{left:7%;top:11%}.cl2{right:8%;top:20%}
+.barn{position:absolute;right:3%;bottom:14%;font-size:110px}.hay{position:absolute;left:50%;bottom:6%;transform:translateX(-50%);font-size:100px}
+.next-animal{position:absolute;top:76px;left:50%;transform:translateX(-50%);z-index:12;font-size:76px;background:transparent;animation:side 2.1s ease-in-out infinite alternate}
+@keyframes side{from{left:21%}to{left:79%}}
+.stack{position:absolute;left:50%;bottom:105px;transform:translateX(-50%);height:430px;width:210px}
+.stack-item{position:absolute;left:50%;transform:translateX(-50%);font-size:68px;transition:.35s}
+.stack-item.wobble{animation:wob .65s infinite alternate}@keyframes wob{from{transform:translateX(-50%) rotate(-3deg)}to{transform:translateX(-50%) rotate(3deg)}}
+.stack-item.fall{animation:fall .9s forwards}@keyframes fall{to{transform:translate(var(--dx),310px) rotate(var(--rot));opacity:.08}}
+.touch-all{position:absolute;inset:0;background:transparent;z-index:8}
+
+/* fire */
+.fire-scene{background:linear-gradient(#72d8ff 0 61%,#6f7880 61%)}
+.fire-house{position:absolute;right:4%;bottom:25%;font-size:132px}.station{position:absolute;left:4%;bottom:25%;font-size:125px}
+.flame{position:absolute;right:15%;bottom:44%;font-size:72px;animation:flame .5s infinite alternate}@keyframes flame{to{transform:scale(1.14) rotate(5deg)}}
+.truck{position:absolute;left:7%;bottom:10%;font-size:106px;transition:left .08s}
+.controls{position:absolute;left:12px;right:12px;bottom:13px;display:flex;justify-content:space-between;z-index:25}
+.controls button{width:80px;height:80px;border-radius:50%;background:white;box-shadow:var(--shadow);font-size:37px}
+.action{position:absolute;left:50%;bottom:16px;transform:translateX(-50%);z-index:30;width:88px;height:88px;border-radius:50%;background:#ffe45b;box-shadow:var(--shadow);font-size:43px}
+.water{position:absolute;right:15%;bottom:43%;display:none;font-size:58px;animation:spray .45s infinite alternate}@keyframes spray{to{transform:translateY(-9px)}}
+
+/* rescue */
+.rescue{background:linear-gradient(#a7e9ff 0 60%,#505a64 60%)}
+.skyline{position:absolute;left:0;right:0;bottom:34%;font-size:94px;letter-spacing:12px;white-space:nowrap}
+.roadline{position:absolute;left:0;right:0;bottom:19%;height:7px;background:repeating-linear-gradient(90deg,#fff 0 45px,transparent 45px 85px)}
+.vehicle{position:absolute;left:7%;bottom:12%;font-size:105px;transition:left .08s}.target{position:absolute;right:10%;bottom:18%;font-size:73px}
+.types{position:absolute;top:54px;left:50%;transform:translateX(-50%);display:flex;gap:12px;z-index:18}
+.types button{width:74px;height:74px;border-radius:21px;background:white;box-shadow:var(--shadow);font-size:39px}.types button.on{outline:6px solid #ffe34f}
+
+/* puzzle */
+.puzzle{background:linear-gradient(145deg,#f9ddff,#dff5ff)}
+.board{position:absolute;left:6%;right:6%;top:88px;bottom:22px;background:rgba(255,255,255,.72);border-radius:28px;padding:17px}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:17px}.slot{height:145px;border:5px dashed rgba(40,55,80,.25);border-radius:23px;background:transparent;font-size:68px;filter:grayscale(1);opacity:.33}
+.slot.done{filter:none;opacity:1;border-style:solid;border-color:#5bd184;background:white}
+.pieces{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:24px}.piece{height:90px;border-radius:19px;background:white;box-shadow:var(--shadow);font-size:52px}.piece.sel{outline:6px solid #ffe34f;transform:scale(1.06)}
+@media(max-width:390px){.scene{min-height:500px}.card{min-height:162px}.card .art{font-size:58px}}
+</style>
+</head>
+<body>
+<div class="app">
+<section id="home" class="screen active">
+  <div class="top"><div class="brand"><i>🦊</i>Minik Kaşif</div><div class="pill">⭐ <span id="star">0</span></div></div>
+  <div class="hero"><div class="friend">🐼</div><div><h1>Dokun, sür ve keşfet!</h1><p>2–4 yaş için kısa, görsel ve sesli oyunlar.</p></div></div>
+  <div class="menu">
+    <button class="card c1" data-open="tower"><div class="art">🐘<br>🐄<br>🌾</div><b>Hayvan Kulesi</b></button>
+    <button class="card c2" data-open="fire"><div class="art">🚒🔥</div><b>İtfaiye</b></button>
+    <button class="card c3" data-open="rescue"><div class="art">🚑🚓</div><b>Kurtarma</b></button>
+    <button class="card c4" data-open="puzzle"><div class="art">🧩🐶</div><b>Yapboz</b></button>
+  </div>
+</section>
+
+<section id="tower" class="screen">
+  <div class="game-head"><button class="round back">←</button><strong>Hayvan Kulesi</strong><button class="round reset">↻</button></div>
+  <div class="scene tower">
+    <div class="hint">Hayvana dokun 👆</div><div class="cloud cl1">☁️</div><div class="cloud cl2">☁️</div>
+    <div class="barn">🏠</div><button id="nextAnimal" class="next-animal">🐘</button><div id="stack" class="stack"></div><div class="hay">🌾</div>
+    <button id="towerTouch" class="touch-all" aria-label="Hayvanı bırak"></button>
+    <div id="towerOver" class="overlay"><div class="win"><div class="big">🎉</div><h2 id="towerText">Harika kule!</h2><button data-again="tower">Yeniden Oyna</button></div></div>
+  </div>
+</section>
+
+<section id="fire" class="screen">
+  <div class="game-head"><button class="round back">←</button><strong>İtfaiye Görevi</strong><button class="round reset">↻</button></div>
+  <div class="scene fire-scene">
+    <div class="hint">Sür ve yangını söndür 🚒</div><div class="station">🏢</div><div class="fire-house">🏠</div><div id="flame" class="flame">🔥</div>
+    <div id="truck" class="truck">🚒</div><div id="water" class="water">💦</div>
+    <div class="controls"><button id="fireL">⬅️</button><button id="fireR">➡️</button></div><button id="waterBtn" class="action">💧</button>
+    <div id="fireOver" class="overlay"><div class="win"><div class="big">🏅</div><h2>Yangın söndü!</h2><button data-again="fire">Yeni Görev</button></div></div>
+  </div>
+</section>
+
+<section id="rescue" class="screen">
+  <div class="game-head"><button class="round back">←</button><strong>Kurtarma Ekibi</strong><button class="round reset">↻</button></div>
+  <div class="scene rescue">
+    <div class="hint">Doğru aracı seç ve sür</div>
+    <div class="types"><button data-v="🚑">🚑</button><button data-v="🚓">🚓</button><button data-v="🚒">🚒</button></div>
+    <div class="skyline">🏢🏠🏫</div><div class="roadline"></div><div id="vehicle" class="vehicle">🚑</div><div id="target" class="target">🤕</div>
+    <div class="controls"><button id="resL">⬅️</button><button id="resR">➡️</button></div>
+    <div id="resOver" class="overlay"><div class="win"><div class="big">💖</div><h2>Yardım ulaştı!</h2><button data-again="rescue">Yeni Görev</button></div></div>
+  </div>
+</section>
+
+<section id="puzzle" class="screen">
+  <div class="game-head"><button class="round back">←</button><strong>Hayvan Yapbozu</strong><button class="round reset">↻</button></div>
+  <div class="scene puzzle">
+    <div class="hint">Parçaya, sonra yerine dokun</div>
+    <div class="board"><div class="slots">
+      <button class="slot" data-a="🐶">🐶</button><button class="slot" data-a="🐱">🐱</button>
+      <button class="slot" data-a="🐸">🐸</button><button class="slot" data-a="🦁">🦁</button>
+    </div><div class="pieces"><button class="piece">🐸</button><button class="piece">🦁</button><button class="piece">🐶</button><button class="piece">🐱</button></div></div>
+    <div id="puzOver" class="overlay"><div class="win"><div class="big">🧩</div><h2>Yapboz tamamlandı!</h2><button data-again="puzzle">Yeniden Oyna</button></div></div>
+  </div>
+</section>
+</div>
+
+<script>
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+let stars=Number(localStorage.getItem("minikStarsV2")||0);$("#star").textContent=stars;
+function addStar(n=3){stars+=n;localStorage.setItem("minikStarsV2",stars);$("#star").textContent=stars}
+function speak(t){if(!("speechSynthesis" in window))return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(t);u.lang="tr-TR";u.rate=.88;u.pitch=1.12;speechSynthesis.speak(u)}
+function beep(f=440,d=.12){try{let a=new (window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();o.frequency.value=f;o.connect(g);g.connect(a.destination);g.gain.setValueAtTime(.1,a.currentTime);g.gain.exponentialRampToValueAtTime(.001,a.currentTime+d);o.start();o.stop(a.currentTime+d)}catch(e){}}
+function show(id){$$(".screen").forEach(x=>x.classList.remove("active"));$("#"+id).classList.add("active");window.scrollTo(0,0)}
+function celebrate(over,msg){if(msg)over.querySelector("h2").textContent=msg;over.classList.add("show");for(let i=0;i<18;i++){let c=document.createElement("span");c.className="confetti";c.textContent=["⭐","🎉","✨","🎈"][i%4];c.style.left=Math.random()*95+"%";c.style.animationDelay=Math.random()*.6+"s";over.parentElement.appendChild(c);setTimeout(()=>c.remove(),2100)}addStar();beep(760,.2);setTimeout(()=>beep(980,.28),130)}
+$$("[data-open]").forEach(b=>b.addEventListener("click",()=>{show(b.dataset.open);reset(b.dataset.open)}));
+$$(".back").forEach(b=>b.addEventListener("click",()=>{show("home");speak("Ana sayfa")}));
+$$(".reset").forEach(b=>b.addEventListener("click",()=>reset(b.closest(".screen").id)));
+$$("[data-again]").forEach(b=>b.addEventListener("click",()=>reset(b.dataset.again)));
+
+/* Hayvan kulesi */
+const animals=["🐘","🐄","🐑","🐶","🐱","🐰","🐼","🐸","🐥"];
+let tc=0,ta=true;
+function resetTower(){tc=0;ta=true;$("#stack").innerHTML="";$("#nextAnimal").textContent=animals[0];$("#towerOver").classList.remove("show");speak("Hayvana dokun ve kule yap")}
+function drop(){if(!ta)return;let e=document.createElement("div");e.className="stack-item";e.textContent=$("#nextAnimal").textContent;e.style.bottom=(tc*48)+"px";e.style.marginLeft=(Math.random()*34-17)+"px";$("#stack").appendChild(e);beep(300+tc*45,.1);tc++;$("#nextAnimal").textContent=animals[tc%animals.length];if(tc>=4)e.classList.add("wobble");if(tc>=8||(tc>=5&&Math.random()<.18)){ta=false;speak("Hop! Kule yıkıldı");[...$("#stack").children].forEach((x,i)=>{x.classList.remove("wobble");x.classList.add("fall");x.style.setProperty("--dx",(i%2?1:-1)*(90+Math.random()*120)+"px");x.style.setProperty("--rot",(i%2?1:-1)*(70+Math.random()*90)+"deg")});setTimeout(()=>celebrate($("#towerOver"),tc>=8?"Harika kule!":"Bir daha deneyelim"),850)}else speak(tc%2?"Harika":"Bir hayvan daha")}
+$("#towerTouch").addEventListener("click",drop);$("#nextAnimal").addEventListener("click",drop);
+
+/* Basılı tutarak sürme */
+let hold=null;function bindHold(btn,fn){["pointerdown","touchstart"].forEach(ev=>btn.addEventListener(ev,e=>{e.preventDefault();fn();clearInterval(hold);hold=setInterval(fn,85)}));["pointerup","pointercancel","pointerleave","touchend"].forEach(ev=>btn.addEventListener(ev,()=>clearInterval(hold)))}
+
+/* İtfaiye */
+let fx=7,fd=false;function resetFire(){fx=7;fd=false;$("#truck").style.left=fx+"%";$("#flame").style.display="block";$("#water").style.display="none";$("#fireOver").classList.remove("show");speak("İtfaiye aracını sağa sür ve yangını söndür")}
+function fm(d){if(fd)return;fx=Math.max(3,Math.min(68,fx+d*3));$("#truck").style.left=fx+"%";beep(160,.04)}
+bindHold($("#fireL"),()=>fm(-1));bindHold($("#fireR"),()=>fm(1));
+$("#waterBtn").addEventListener("click",()=>{if(fd)return;if(fx<48){speak("Biraz daha yaklaş");beep(170,.18);return}$("#water").style.display="block";beep(520,.4);setTimeout(()=>{$("#flame").style.display="none";fd=true;speak("Harika, yangın söndü");celebrate($("#fireOver"))},850)});
+
+/* Kurtarma */
+let rx=7,rv="🚑",need="🚑",rd=false;
+function resetRescue(){rx=7;rv="🚑";rd=false;need=["🚑","🚓","🚒"][Math.floor(Math.random()*3)];$("#vehicle").textContent=rv;$("#vehicle").style.left=rx+"%";$("#target").textContent=need==="🚑"?"🤕":need==="🚓"?"🦹":"🔥";$$("[data-v]").forEach((b,i)=>b.classList.toggle("on",i===0));$("#resOver").classList.remove("show");speak(need==="🚑"?"Ambulansı seç ve yaralıya git":need==="🚓"?"Polis aracını seç ve hırsızı yakala":"İtfaiyeyi seç ve yangına git")}
+$$("[data-v]").forEach(b=>b.addEventListener("click",()=>{rv=b.dataset.v;$("#vehicle").textContent=rv;$$("[data-v]").forEach(x=>x.classList.toggle("on",x===b));speak(rv==="🚑"?"Ambulans":rv==="🚓"?"Polis arabası":"İtfaiye aracı")}));
+function rm(d){if(rd)return;rx=Math.max(3,Math.min(72,rx+d*3));$("#vehicle").style.left=rx+"%";beep(175,.04);if(rx>67){if(rv===need){rd=true;speak("Harika, yardım ulaştı");celebrate($("#resOver"))}else{speak("Başka bir araç seçelim");rx=7;$("#vehicle").style.left=rx+"%";beep(150,.2)}}}
+bindHold($("#resL"),()=>rm(-1));bindHold($("#resR"),()=>rm(1));
+
+/* Yapboz */
+let selected=null,done=0;
+function resetPuzzle(){selected=null;done=0;$("#puzOver").classList.remove("show");$$(".slot").forEach(s=>{s.classList.remove("done");s.disabled=false});$$(".piece").forEach(p=>{p.style.visibility="visible";p.classList.remove("sel")});speak("Bir hayvana dokun, sonra aynı şeklin yerine dokun")}
+$$(".piece").forEach(p=>p.addEventListener("click",()=>{$$(".piece").forEach(x=>x.classList.remove("sel"));selected=p;p.classList.add("sel");speak(p.textContent)}));
+$$(".slot").forEach(s=>s.addEventListener("click",()=>{if(!selected){speak("Önce bir parçaya dokun");return}if(selected.textContent===s.dataset.a){s.classList.add("done");s.disabled=true;selected.style.visibility="hidden";selected.classList.remove("sel");selected=null;done++;beep(650,.13);speak("Harika");if(done===4)setTimeout(()=>{speak("Yapboz tamamlandı");celebrate($("#puzOver"))},350)}else{selected.classList.remove("sel");selected=null;beep(180,.18);speak("Bir daha deneyelim")}}));
+
+function reset(id){({tower:resetTower,fire:resetFire,rescue:resetRescue,puzzle:resetPuzzle}[id]||(()=>{}))()}
+</script>
+</body>
+</html>
