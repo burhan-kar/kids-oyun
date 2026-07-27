@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#8ed6ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Minik Kaşif" />
+  <title>Minik Kaşif</title>
+  <style>
+    :root{
+      --bg1:#e9f8ff;
+      --bg2:#fff7dc;
+      --card:#ffffff;
+      --text:#233044;
+      --muted:#607086;
+      --shadow:0 12px 30px rgba(36,64,95,.13);
+      --radius:26px;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;min-height:100%;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:var(--text);background:linear-gradient(160deg,var(--bg1),var(--bg2));}
+    body{padding:env(safe-area-inset-top) 14px env(safe-area-inset-bottom)}
+    button{font:inherit;border:0;cursor:pointer;touch-action:manipulation}
+    .app{max-width:520px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+    header{display:flex;align-items:center;justify-content:space-between;padding:12px 4px 8px}
+    .brand h1{margin:0;font-size:28px;line-height:1}
+    .brand p{margin:6px 0 0;color:var(--muted);font-size:14px}
+    .stars{background:#fff;border-radius:999px;padding:9px 13px;box-shadow:var(--shadow);font-weight:800}
+    .panel{background:rgba(255,255,255,.9);border:1px solid rgba(255,255,255,.8);backdrop-filter:blur(12px);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px;margin-top:10px}
+    .hero{display:flex;align-items:center;gap:14px}
+    .mascot{font-size:62px;filter:drop-shadow(0 7px 5px rgba(0,0,0,.09))}
+    .hero h2{margin:0 0 6px;font-size:22px}
+    .hero p{margin:0;color:var(--muted);line-height:1.4}
+    .menu{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:16px}
+    .menu button{min-height:126px;border-radius:24px;color:#203047;padding:14px;box-shadow:var(--shadow);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;font-weight:800;font-size:17px}
+    .menu .emoji{font-size:46px}
+    .animals{background:linear-gradient(145deg,#c8f7d4,#92e7b2)}
+    .colors{background:linear-gradient(145deg,#ffd2e2,#ff9ec3)}
+    .numbers{background:linear-gradient(145deg,#d9d1ff,#b5a5ff)}
+    .sounds{background:linear-gradient(145deg,#ffe0ae,#ffc96a)}
+    .screen{display:none;flex:1}
+    .screen.active{display:block}
+    .topbar{display:flex;align-items:center;justify-content:space-between;margin:10px 0}
+    .back{background:#fff;border-radius:16px;padding:11px 14px;box-shadow:var(--shadow);font-weight:800}
+    .progress{font-size:14px;color:var(--muted);font-weight:700}
+    .question{text-align:center;padding:12px 8px}
+    .question h2{font-size:27px;margin:8px 0}
+    .question p{margin:0;color:var(--muted)}
+    .choices{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+    .choice{background:#fff;border-radius:25px;min-height:145px;box-shadow:var(--shadow);font-size:62px;display:flex;align-items:center;justify-content:center;border:4px solid transparent;transition:.15s transform,.15s border-color}
+    .choice:active{transform:scale(.97)}
+    .choice.correct{border-color:#39ca79;animation:pop .35s ease}
+    .choice.wrong{border-color:#ff6b78;animation:shake .35s ease}
+    .color-choice{font-size:21px;font-weight:900;color:#fff;text-shadow:0 2px 5px rgba(0,0,0,.18)}
+    .number-choice{font-size:52px;font-weight:900;color:#4b3fc0}
+    .feedback{min-height:52px;text-align:center;font-size:21px;font-weight:900;padding:14px}
+    .next{display:none;width:100%;background:#3867f0;color:white;border-radius:22px;padding:17px;font-size:19px;font-weight:900;box-shadow:var(--shadow)}
+    .next.show{display:block}
+    footer{padding:18px 0 8px;text-align:center;color:var(--muted);font-size:12px}
+    @keyframes pop{50%{transform:scale(1.08)}}
+    @keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+    @media(max-width:370px){.menu button{min-height:112px}.choice{min-height:125px}.brand h1{font-size:25px}}
+  </style>
+</head>
+<body>
+<div class="app">
+  <section id="home" class="screen active">
+    <header>
+      <div class="brand">
+        <h1>Minik Kaşif 🚀</h1>
+        <p>Oyna, dinle, öğren</p>
+      </div>
+      <div class="stars">⭐ <span id="starCount">0</span></div>
+    </header>
+
+    <div class="panel hero">
+      <div class="mascot">🦊</div>
+      <div>
+        <h2>Merhaba minik kaşif!</h2>
+        <p>Bugün birlikte hayvanları, renkleri ve sayıları keşfedelim.</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <button class="animals" onclick="startGame('animals')"><span class="emoji">🐶</span>Hayvanlar</button>
+      <button class="colors" onclick="startGame('colors')"><span class="emoji">🎨</span>Renkler</button>
+      <button class="numbers" onclick="startGame('numbers')"><span class="emoji">🔢</span>Sayılar</button>
+      <button class="sounds" onclick="startGame('sounds')"><span class="emoji">🔊</span>Sesleri Dinle</button>
+    </div>
+    <footer>2,5 yaş için kısa ve basit oyun örneği</footer>
+  </section>
+
+  <section id="game" class="screen">
+    <div class="topbar">
+      <button class="back" onclick="goHome()">← Ana Sayfa</button>
+      <div class="progress" id="progressText">1 / 5</div>
+    </div>
+
+    <div class="panel">
+      <div class="question">
+        <div style="font-size:45px" id="topicIcon">🐾</div>
+        <h2 id="questionText">Kediyi bul!</h2>
+        <p id="hintText">Doğru resme dokun.</p>
+      </div>
+
+      <div class="choices" id="choices"></div>
+      <div class="feedback" id="feedback"></div>
+      <button class="next" id="nextBtn" onclick="nextQuestion()">Sonraki Oyun →</button>
+    </div>
+  </section>
+</div>
+
+<script>
+  const sets = {
+    animals: [
+      {q:"Kediyi bul!", answer:"🐱", options:["🐱","🐶","🐰","🦁"], say:"Kediyi bul"},
+      {q:"Köpeği bul!", answer:"🐶", options:["🐼","🐶","🐸","🐥"], say:"Köpeği bul"},
+      {q:"Aslanı bul!", answer:"🦁", options:["🦊","🐻","🦁","🐮"], say:"Aslanı bul"},
+      {q:"Tavşanı bul!", answer:"🐰", options:["🐰","🐵","🐯","🐷"], say:"Tavşanı bul"},
+      {q:"İneği bul!", answer:"🐮", options:["🐑","🐮","🐔","🐴"], say:"İneği bul"}
+    ],
+    colors: [
+      {q:"Kırmızı rengi bul!", answer:"Kırmızı", options:["Kırmızı","Mavi","Sarı","Yeşil"], colors:["#ef4444","#3b82f6","#f5c518","#22c55e"], say:"Kırmızı rengi bul"},
+      {q:"Mavi rengi bul!", answer:"Mavi", options:["Turuncu","Mor","Mavi","Pembe"], colors:["#f97316","#8b5cf6","#3b82f6","#ec4899"], say:"Mavi rengi bul"},
+      {q:"Sarı rengi bul!", answer:"Sarı", options:["Yeşil","Sarı","Kırmızı","Mavi"], colors:["#22c55e","#f5c518","#ef4444","#3b82f6"], say:"Sarı rengi bul"},
+      {q:"Yeşil rengi bul!", answer:"Yeşil", options:["Mor","Pembe","Turuncu","Yeşil"], colors:["#8b5cf6","#ec4899","#f97316","#22c55e"], say:"Yeşil rengi bul"}
+    ],
+    numbers: [
+      {q:"Bir sayısını bul!", answer:"1", options:["1","2","3","4"], say:"Bir sayısını bul"},
+      {q:"İki sayısını bul!", answer:"2", options:["4","2","1","3"], say:"İki sayısını bul"},
+      {q:"Üç sayısını bul!", answer:"3", options:["2","4","3","1"], say:"Üç sayısını bul"},
+      {q:"Kaç tane elma var? 🍎🍎", answer:"2", options:["1","2","3","4"], say:"Kaç tane elma var? İki tane"}
+    ],
+    sounds: [
+      {q:"Hangisi miyavlar?", answer:"🐱", options:["🐱","🐶","🐮","🦁"], say:"Hangisi miyavlar?"},
+      {q:"Hangisi havlar?", answer:"🐶", options:["🐸","🐶","🐥","🐑"], say:"Hangisi havlar?"},
+      {q:"Hangisi möö der?", answer:"🐮", options:["🐴","🐮","🐱","🦆"], say:"Hangisi möö der?"},
+      {q:"Hangisi kükrer?", answer:"🦁", options:["🐰","🐼","🦁","🐔"], say:"Hangisi kükrer?"}
+    ]
+  };
+
+  let gameType = "animals";
+  let index = 0;
+  let stars = Number(localStorage.getItem("minikKasifStars") || 0);
+  let locked = false;
+  document.getElementById("starCount").textContent = stars;
+
+  function speak(text){
+    if(!("speechSynthesis" in window)) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "tr-TR";
+    u.rate = 0.85;
+    u.pitch = 1.15;
+    speechSynthesis.speak(u);
+  }
+
+  function shuffle(arr){ return [...arr].sort(()=>Math.random()-.5); }
+
+  function startGame(type){
+    gameType = type;
+    index = 0;
+    document.getElementById("home").classList.remove("active");
+    document.getElementById("game").classList.add("active");
+    renderQuestion();
+  }
+
+  function goHome(){
+    speechSynthesis?.cancel();
+    document.getElementById("game").classList.remove("active");
+    document.getElementById("home").classList.add("active");
+  }
+
+  function renderQuestion(){
+    locked = false;
+    const data = sets[gameType][index];
+    const titles = {animals:"🐾", colors:"🎨", numbers:"🔢", sounds:"🔊"};
+    document.getElementById("topicIcon").textContent = titles[gameType];
+    document.getElementById("questionText").textContent = data.q;
+    document.getElementById("progressText").textContent = `${index+1} / ${sets[gameType].length}`;
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("nextBtn").classList.remove("show");
+
+    const choices = document.getElementById("choices");
+    choices.innerHTML = "";
+    const ordered = shuffle(data.options.map((v,i)=>({v, originalIndex:i})));
+
+    ordered.forEach(item=>{
+      const b = document.createElement("button");
+      b.className = "choice";
+      b.dataset.value = item.v;
+      if(gameType === "colors"){
+        const original = data.options.indexOf(item.v);
+        b.style.background = data.colors[original];
+        b.classList.add("color-choice");
+        b.textContent = item.v;
+      } else if(gameType === "numbers"){
+        b.classList.add("number-choice");
+        b.textContent = item.v;
+      } else {
+        b.textContent = item.v;
+      }
+      b.onclick = ()=>checkAnswer(b, item.v, data.answer);
+      choices.appendChild(b);
+    });
+    setTimeout(()=>speak(data.say), 250);
+  }
+
+  function checkAnswer(button, value, answer){
+    if(locked) return;
+    if(value === answer){
+      locked = true;
+      button.classList.add("correct");
+      stars++;
+      localStorage.setItem("minikKasifStars", stars);
+      document.getElementById("starCount").textContent = stars;
+      document.getElementById("feedback").textContent = "Harika! ⭐";
+      speak("Harika! Doğru bildin.");
+      document.getElementById("nextBtn").classList.add("show");
+    } else {
+      button.classList.add("wrong");
+      document.getElementById("feedback").textContent = "Bir daha deneyelim 😊";
+      speak("Bir daha deneyelim");
+      setTimeout(()=>button.classList.remove("wrong"),500);
+    }
+  }
+
+  function nextQuestion(){
+    index++;
+    if(index >= sets[gameType].length){
+      index = 0;
+      document.getElementById("feedback").textContent = "Tebrikler! Bölüm tamamlandı 🎉";
+      speak("Tebrikler! Bölümü tamamladın.");
+      setTimeout(goHome, 1400);
+      return;
+    }
+    renderQuestion();
+  }
+</script>
+</body>
+</html>
